@@ -69,22 +69,36 @@ def populate():
 @app.route('/seed', methods=['POST'])
 @cross_origin()
 def seed():
-    LOCAL_MONGO_URL = dotenv_values('.env').get('MONGO_URL')
-    MONGO_URL = os.environ.get('MONGO_URL', LOCAL_MONGO_URL)
+    # LOCAL_MONGO_URL = dotenv_values('.env').get('MONGO_URL')
+    # MONGO_URL = os.environ.get('MONGO_URL', LOCAL_MONGO_URL)
 
-    print(f'Connecting to MongoDB at url {MONGO_URL}')
-    client = pymongo.MongoClient(MONGO_URL)
-    db = client.edutask
+    # print(f'Connecting to MongoDB at url {MONGO_URL}')
+    # client = pymongo.MongoClient(MONGO_URL)
+    # db = client.edutask
 
-    collections = db.list_collection_names()
-    for collection in collections:
-        db.drop_collection(collection)
+    drop_user_and_related('jane.doe@gmail.com')
 
     res = populate()
     data = res.get_json()
     uid = data.get('users')[0]
 
     return jsonify(uid), 200
+
+# drop user and it's related tasks, todos and videos
+def drop_user_and_related(email):
+    usercontroller = UserController(getDao(collection_name='user'))
+    taskcontroller = TaskController(tasks_dao=getDao(collection_name='task'), videos_dao=getDao(collection_name='video'), todos_dao=getDao(collection_name='todo'), users_dao=getDao(collection_name='user'))
+
+    # Find the user
+    user = usercontroller.get_user_by_email(email)
+    if user is None:
+        return
+
+    # Delete tasks, todos, and videos related to the user
+    taskcontroller.delete_of_user(user['_id']['$oid'])
+
+    # Delete the user
+    usercontroller.delete(user['_id']['$oid'])
 
 # main loop
 if __name__ == '__main__':

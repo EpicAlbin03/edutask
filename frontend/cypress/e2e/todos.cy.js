@@ -4,26 +4,28 @@ describe("Todos", function () {
   beforeEach(function () {
     cy.task("db:seed").then((uid) => {
       cy.login(uid)
+      cy.wrap(uid).as("uid")
     })
-
-    cy.getBySel("task-0").click()
   })
 
   // R8UC1: Add todo
   it("Enter a description", function () {
+    cy.getBySel("task-0").click()
+
+    cy.getBySel("todo-add-input").clear()
     cy.getBySel("todo-add-submit").should("be.disabled")
 
     cy.getBySel("todo-add-input").type("Brew coffee")
     cy.getBySel("todo-add-submit").should("not.be.disabled")
-
-    cy.getBySel("todo-add-input").clear()
-    cy.getBySel("todo-add-submit").should("be.disabled")
   })
 
   it("Click the 'Add' button", function () {
+    cy.getBySel("task-0").click()
+
     cy.getBySelLike("todo-item")
       .its("length")
       .then((initialCount) => {
+        cy.getBySel("todo-add-input").clear()
         cy.getBySel("todo-add-input").type("Brew coffee")
         cy.getBySel("todo-add-submit").click()
 
@@ -36,7 +38,10 @@ describe("Todos", function () {
   })
 
   // R8UC2: Toggle todo
-  it("Click the toggle icon in front of the description", function () {
+  it("Click the [active] toggle icon in front of the description", function () {
+    cy.toggleTodo(false)
+    cy.getBySel("task-0").click()
+
     cy.getBySel("todo-item-0").find('[data-test="toggle"]').click()
     cy.getBySel("todo-item-0")
       .find('[data-test="toggle"]')
@@ -46,6 +51,11 @@ describe("Todos", function () {
       .should(($el) => {
         expect($el.css("text-decoration")).to.include("line-through")
       })
+  })
+
+  it("Click the [done] toggle icon in front of the description", function () {
+    cy.toggleTodo(true)
+    cy.getBySel("task-0").click()
 
     cy.getBySel("todo-item-0").find('[data-test="toggle"]').click()
     cy.getBySel("todo-item-0")
@@ -60,6 +70,8 @@ describe("Todos", function () {
 
   // R8UC3: Delete todo
   it("Click the 'X' icon behind the description", function () {
+    cy.getBySel("task-0").click()
+
     cy.getBySelLike("todo-item")
       .its("length")
       .then((initialCount) => {

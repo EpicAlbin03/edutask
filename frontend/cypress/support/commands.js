@@ -48,3 +48,28 @@ Cypress.Commands.add("login", (uid) => {
     return cy.wrap(user)
   })
 })
+
+Cypress.Commands.add("toggleTodo", (done) => {
+  cy.get("@uid").then((uid) => {
+    cy.request({
+      method: "GET",
+      url: `http://localhost:5000/tasks/ofuser/${uid}`,
+    }).then((res) => {
+      const tasks = res.body
+      const todo = tasks[0].todos[0]
+
+      cy.request({
+        method: "PUT",
+        url: `http://localhost:5000/todos/byid/${todo._id.$oid}`,
+        form: true,
+        body: {
+          data: JSON.stringify({
+            $set: {
+              done: done,
+            },
+          }),
+        },
+      })
+    })
+  })
+})
